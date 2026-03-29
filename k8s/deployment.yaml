@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: rag-app
+  template:
+    metadata:
+      labels:
+        app: rag-app
+    spec:
+      containers:
+      - name: rag-app
+        image: 096429911623.dkr.ecr.us-east-1.amazonaws.com/rag-app:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: rag-secrets

@@ -2,13 +2,13 @@
 
 A state-of-the-art Multimodal Retrieval-Augmented Generation (RAG) system built with **LangChain**, **Groq (Llama-3)**, and a premium **Glassmorphic UI**. This system can process PDFs (text & OCR) and images, providing intelligent answers based on your uploaded knowledge base.
 
-![Project Preview](https://img.shields.io/badge/Status-Ready-brightgreen)
+
 
 ## 🚀 Features
 
 -   **Multimodal Processing**: Handles standard PDFs, scanned documents (via OCR), and images (BLIP-base for captioning).
 -   **Agentic Intelligence**: Powered by `Llama-3-70b` on Groq for ultra-fast reasoning.
--   **Vector Storage**: local FAISS vector store for efficient similarity search.
+-   **Vector Storage**: Local FAISS vector store for efficient similarity search.
 -   **Premium UI**: A sleek, responsive frontend with a glassmorphic design and smooth animations.
 -   **Docker Ready**: Fully containerized for easy deployment across environments.
 -   **LangChain Integrated**: Refactored to use LangChain for better maintainability and extensibility.
@@ -18,7 +18,7 @@ A state-of-the-art Multimodal Retrieval-Augmented Generation (RAG) system built 
 -   **Backend**: FastAPI, LangChain, FAISS, PyMuPDF, Pytesseract, BLIP-base.
 -   **LLM**: Groq (Llama-3-70b), HuggingFace (for local embeddings & image captioning).
 -   **Frontend**: Vanilla HTML/CSS/JS (Glassmorphic design).
--   **DevOps**: Docker, Docker Compose.
+-   **DevOps**: Docker, Docker Compose, Kubernetes.
 
 ## 📋 Prerequisites
 
@@ -27,7 +27,7 @@ Before running the project, ensure you have the following installed:
 -   **Python 3.12+**
 -   **Tesseract OCR**: Required for scanned PDF text extraction.
 -   **Poppler**: Required for PDF-to-image conversion.
--   **Docker** (Optional, for containerized deployment).
+-   **Docker** (Optional).
 
 ### Installing System Dependencies (Mac)
 ```bash
@@ -44,8 +44,8 @@ sudo apt-get install -y tesseract-ocr poppler-utils
 
 1.  **Clone the Repository**
     ```bash
-    git clone https://github.com/your-username/multimodal-rag.git
-    cd multimodal-rag
+    git clone https://github.com/aayushsupe69-pixel/multimodal-agentic-rag.git
+    cd multimodal-agentic-rag
     ```
 
 2.  **Create a Virtual Environment**
@@ -57,7 +57,7 @@ sudo apt-get install -y tesseract-ocr poppler-utils
 
 3.  **Install Dependencies**
     ```bash
-    pip install -r requirements.txt
+    pip install -r rag_project/requirements.txt
     ```
 
 4.  **Configure Environment Variables**
@@ -71,28 +71,34 @@ sudo apt-get install -y tesseract-ocr poppler-utils
 
 ### Option 1: Standard Python
 ```bash
-python main.py
+python rag_project/main.py
 ```
 The app will be available at `http://localhost:8000`.
 
 ### Option 2: Docker Compose
 ```bash
+cd rag_project
 docker-compose up --build
 ```
-The app will be available at `http://localhost:8000`.
+
+### Option 3: Kubernetes
+```bash
+kubectl apply -f k8s/
+```
 
 ## 📁 Project Structure
 
 ```text
-rag_project/
-├── frontend/           # Glassmorphic UI files
-├── rag/                # Core RAG logic (LangChain)
-│   ├── loader/         # PDF & Image loaders
-│   ├── pipeline.py     # Main RAG pipeline
-│   └── embedder.py     # Embedding logic
-├── data/               # Persistent storage for uploads
-├── vector_store/       # FAISS index storage
-├── main.py             # FastAPI entry point
-├── Dockerfile          # Docker configuration
-└── requirements.txt    # Python dependencies
+.
+├── k8s/                # Kubernetes deployment manifests
+├── rag_project/        # Main application code
+│   ├── frontend/       # Glassmorphic UI files
+│   ├── rag/            # Core RAG logic (LangChain)
+│   ├── main.py         # FastAPI entry point
+│   └── Dockerfile      # Docker configuration
+├── README.md           # This file
+└── .env.example        # Environment variable template
 ```
+
+---
+Built with ❤️ by [Aayush Supe]
