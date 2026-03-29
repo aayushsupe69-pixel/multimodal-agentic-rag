@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multimodal RAG Agentic System</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Marked.js for simple markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 1. Header -->
+        <header>
+            <h1>Multimodal RAG <span style="font-size: 0.6rem; vertical-align: middle; background: var(--accent); color: white; padding: 2px 6px; border-radius: 10px; text-transform: uppercase;">Agentic</span></h1>
+            <p class="subtitle">Upload PDF/Image → Ask Questions → Get Context-Aware Answers</p>
+        </header>
+
+        <!-- 2. Upload Bar -->
+        <div class="upload-bar">
+            <!-- PDF Upload -->
+            <label class="upload-card" for="pdf-input">
+                <div class="upload-icon">📄</div>
+                <div class="upload-info">
+                    <span class="upload-title">Knowledge PDF</span>
+                    <span id="pdf-status" class="file-status">No file chosen</span>
+                </div>
+                <input type="file" id="pdf-input" hidden accept=".pdf" onchange="handleFileSelect(this, 'pdf')">
+            </label>
+
+            <!-- Image Upload -->
+            <label class="upload-card" for="img-input">
+                <div class="upload-icon">🖼️</div>
+                <div class="upload-info">
+                    <span class="upload-title">Visual Context</span>
+                    <span id="img-status" class="file-status">No file chosen</span>
+                </div>
+                <img id="img-thumb" class="img-preview">
+                <input type="file" id="img-input" hidden accept="image/*" onchange="handleFileSelect(this, 'img')">
+            </label>
+
+            <!-- Reset -->
+            <div class="reset-container">
+                <button class="btn-reset" onclick="confirmReset()">Reset System</button>
+            </div>
+        </div>
+
+        <!-- 3. Status Notification -->
+        <div id="loading-status" class="loading">
+            <div class="spinner"></div>
+            <span id="loading-text">Processing...</span>
+        </div>
+
+        <!-- 4. Chat Window -->
+        <div id="chat-window" class="chat-window">
+            <div id="empty-state" class="empty-state">
+                <div class="welcome-icon">⚡</div>
+                <h2>Welcome to Multimodal RAG</h2>
+                <p>Upload a PDF or image above to begin,<br>then ask me anything about your data.</p>
+            </div>
+        </div>
+
+        <!-- 5. Input Area -->
+        <div class="input-area">
+            <input type="text" id="query-input" class="query-input" placeholder="Type your question here..." onkeypress="handleKeyPress(event)">
+            <button class="btn-send" onclick="sendQuery()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const emptyState = document.getElementById('empty-state');
+        const loadingStatus = document.getElementById('loading-status');
+        const loadingText = document.getElementById('loading-text');
+
+        // ── File Handling ─────────────────────────────
+        async function handleFileSelect(input, type) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            
+            // Update UI status
+            const statusLabel = document.getElementById(`${type}-status`);
+            statusLabel.innerText = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+            
+            if (type === 'img') {
+                const thumb = document.getElementById('img-thumb');
+                thumb.src = URL.createObjectURL(file);
+                thumb.style.display = 'block';
+                document.querySelector('[for="img-input"] .upload-icon').style.display = 'none';
+            }
+
+            // Auto Upload
+            await uploadFile(file, type);
+        }
+
+        async function uploadFile(file, type) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            showLoading(type === 'pdf' ? "Indexing PDF Knowledge..." : "Analyzing Image Context...");
+            
+            try {
+                const endpoint = type === 'pdf' ? '/upload/pdf' : '/upload/image';
+                const response = await fetch(endpoint, { method: 'POST', body: formData });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addMessage('system', `✅ ${type.toUpperCase()} Processed: ${result.message || 'Success'}`);
+                    emptyState.style.display = 'none';
+                } else {
+                    addMessage('system', `❌ Error: ${result.detail || 'Upload failed'}`);
+                }
+            } catch (err) {
+                addMessage('system', `❌ Network Error: ${err.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ── Query Handling ────────────────────────────
+        function handleKeyPress(e) { if (e.key === 'Enter') sendQuery(); }
+
+        async function sendQuery() {
+            const input = document.getElementById('query-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            input.value = '';
+            emptyState.style.display = 'none';
+            addMessage('user', query);
+
+            showLoading("Thinking...");
+            
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    addAIMessage(result.answer, result.context, result.source);
+                } else {
+                    addMessage('system', `❌ API Error: ${result.detail || 'Could not get answer'}`);
+                }
+            } catch (err) {
+                addMessage('system', `❌ Network Error: ${err.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ── UI Components ─────────────────────────────
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `message ${role}-message`;
+            div.innerHTML = marked.parse(text);
+            chatWindow.appendChild(div);
+            scrollToBottom();
+        }
+
+        function addAIMessage(answer, context, source) {
+            const div = document.createElement('div');
+            div.className = 'message ai-message';
+            
+            // Answer Part
+            const answerHtml = `<div>${marked.parse(answer)}</div>`;
+            
+            // Context Part (Collapsible)
+            let contextHtml = '';
+            if (context) {
+                contextHtml = `
+                    <div class="context-panel">
+                        <div class="context-header" onclick="toggleContext(this)">
+                            🔍 Source Context 📁 ${source || 'document'} 🔽
+                        </div>
+                        <div class="context-content">
+                            <div class="context-card">${marked.parse(context)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            div.innerHTML = answerHtml + contextHtml;
+            chatWindow.appendChild(div);
+            scrollToBottom();
+        }
+
+        function toggleContext(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+            header.innerHTML = header.innerHTML.includes('🔽') 
+                ? header.innerHTML.replace('🔽', '🔼') 
+                : header.innerHTML.replace('🔼', '🔽');
+        }
+
+        function showLoading(text) {
+            loadingText.innerText = text;
+            loadingStatus.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingStatus.style.display = 'none';
+        }
+
+        function scrollToBottom() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function confirmReset() {
+            if (confirm("Are you sure you want to clear all data and reset the system?")) {
+                performReset();
+            }
+        }
+
+        async function performReset() {
+            showLoading("Resetting system...");
+            try {
+                const resp = await fetch('/reset', { method: 'POST' });
+                if (resp.ok) {
+                    window.location.reload();
+                }
+            } catch (err) {
+                alert("Reset failed: " + err.message);
+            } finally {
+                hideLoading();
+            }
+        }
+    </script>
+</body>
+</html>

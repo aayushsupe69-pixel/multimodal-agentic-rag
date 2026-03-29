@@ -1,0 +1,10 @@
+__pycache__/
+.env
+.git/
+.DS_Store
+vector_store/
+data/
+outputs/
+*.pdf
+*.jpg
+*.png

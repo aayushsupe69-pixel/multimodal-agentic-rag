@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Project Specific
+data/pdfs/*
+data/images/*
+!data/pdfs/.gitkeep
+!data/images/.gitkeep
+vector_store/*
+!vector_store/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
